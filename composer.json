@@ -1,0 +1,28 @@
+{
+  "name": "sajol010/cake-rest-api",
+  "description": "CakePHP 3.8 plugin to provide basic support for building REST API services inspired by tonmoy007/cake-rest-api",
+  "type": "cakephp-plugin",
+  "homepage": "https://github.com/cakephp/debug_kit",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.2.0",
+    "firebase/php-jwt": "^5.0",
+    "cakephp/cakephp": "^5.2",
+    "cakephp/authentication": "^3.2",
+    "cakephp/authorization": "^3.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "RestApi\\": "src"
+    }
+  },
+  "require-dev": {
+    "cakephp/cakephp-codesniffer": "^5.2",
+    "cakephp/upgrade": "5.x-dev"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  }
+}
