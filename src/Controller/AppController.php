@@ -4,7 +4,8 @@ namespace RestApi\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Core\Configure;
-use Cake\Event\Event;
+use Cake\Event\EventInterface;
+use Cake\Http\Response;
 
 /**
  * Application Controller
@@ -61,7 +62,7 @@ class AppController extends Controller
      * @return void
      * @throws \Exception
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
 
@@ -85,14 +86,14 @@ class AppController extends Controller
     /**
      * Before render callback.
      *
-     * @param Event $event The beforeRender event.
-     * @return \Cake\Network\Response|null
+     * @param EventInterface $event The beforeRender event.
+     * @return Response|null
      */
-    public function beforeRender(Event $event)
+    public function beforeRender(EventInterface $event): ?Response
     {
         parent::beforeRender($event);
 
-        $this->response->getStatusCode($this->httpStatusCode);
+        $this->setResponse($this->getResponse()->withStatus($this->httpStatusCode));
 
         if (200 != $this->httpStatusCode) {
             $this->responseStatus = $this->responseFormat['statusNokText'];

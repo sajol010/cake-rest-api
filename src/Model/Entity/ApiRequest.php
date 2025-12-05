@@ -2,8 +2,7 @@
 
 namespace RestApi\Model\Entity;
 
-use App\Model\Entity\Project;
-use Cake\I18n\Time;
+use Cake\I18n\DateTime;
 use Cake\ORM\Entity;
 
 /**
@@ -19,10 +18,8 @@ use Cake\ORM\Entity;
  * @property string $response_type
  * @property string $response_data
  * @property string $exception
- * @property Time $created
- * @property Time $modified
- *
- * @property Project $project
+ * @property DateTime $created
+ * @property DateTime $modified
  */
 class ApiRequest extends Entity
 {

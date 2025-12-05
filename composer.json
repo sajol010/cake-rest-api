@@ -5,7 +5,7 @@
   "homepage": "https://github.com/cakephp/debug_kit",
   "license": "MIT",
   "require": {
-    "php": ">=7.2.0",
+    "php": ">=8.1",
     "firebase/php-jwt": "^5.0",
     "cakephp/cakephp": "^5.2",
     "cakephp/authentication": "^3.2",

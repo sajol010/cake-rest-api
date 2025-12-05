@@ -3,9 +3,10 @@
 namespace RestApi\Event;
 
 use Cake\Core\Configure;
-use Cake\Event\Event;
 use Cake\Event\EventListenerInterface;
 use Cake\Http\Response;
+use Cake\Event\EventInterface;
+use Cake\Http\ServerRequest;
 use RestApi\Utility\ApiRequestLogger;
 
 /**
@@ -20,7 +21,7 @@ class ApiRequestHandler implements EventListenerInterface
      *
      * @return array
      */
-    public function implementedEvents()
+    public function implementedEvents(): array
     {
         return [
             'Dispatcher.beforeDispatch' => [
@@ -41,20 +42,22 @@ class ApiRequestHandler implements EventListenerInterface
     /**
      * Handles incoming request and its data.
      *
-     * @param Event $event The beforeDispatch event
+     * @param EventInterface $event The beforeDispatch event
      */
-    public function beforeDispatch(Event $event)
+    public function beforeDispatch(EventInterface $event)
     {
         /**
          * @var $response Response
          */
         $response = $this->buildResponse($event);
         Configure::write('requestLogged', false);
-        $request = $event->getData()['request'];
+        $request = $event->getData('request');
+        if (!$request instanceof ServerRequest) {
+            return null;
+        }
         if ('OPTIONS' === $request->getMethod()) {
             $event->stopPropagation();
-            $response->getStatusCode(200);
-            return $response;
+            return $response->withStatus(200);
         }
 //        if (empty($request->getData())) {
 ////            $request->data = $request->input('json_decode', true);
@@ -64,9 +67,9 @@ class ApiRequestHandler implements EventListenerInterface
     /**
      * Updates response headers.
      *
-     * @param Event $event The afterDispatch event
+     * @param EventInterface $event The afterDispatch event
      */
-    public function afterDispatch(Event $event)
+    public function afterDispatch(EventInterface $event)
     {
         $this->buildResponse($event);
     }
@@ -74,11 +77,12 @@ class ApiRequestHandler implements EventListenerInterface
     /**
      * Logs the request and response data into database.
      *
-     * @param Event $event The shutdown event
+     * @param EventInterface $event The shutdown event
      */
-    public function shutdown(Event $event)
+    public function shutdown(EventInterface $event)
     {
-        $request = $event->getSubject()->request;
+        $controller = $event->getSubject();
+        $request = $controller->getRequest();
         if ('OPTIONS' === $request->getMethod()) {
             return;
         }
@@ -87,12 +91,12 @@ class ApiRequestHandler implements EventListenerInterface
                 $responseCode = $event->getSubject()->httpStatusCode;
                 $logOnlyErrorCodes = Configure::read('ApiRequest.logOnlyErrorCodes');
                 if (empty($logOnlyErrorCodes) && $responseCode !== 200) {
-                    ApiRequestLogger::log($request, $event->getSubject()->response);
+                    ApiRequestLogger::log($request, $controller->getResponse());
                 } elseif (in_array($responseCode, $logOnlyErrorCodes)) {
-                    ApiRequestLogger::log($request, $event->getSubject()->response);
+                    ApiRequestLogger::log($request, $controller->getResponse());
                 }
             } else {
-                ApiRequestLogger::log($request, $event->getSubject()->response);
+                ApiRequestLogger::log($request, $controller->getResponse());
             }
         }
     }
@@ -100,18 +104,21 @@ class ApiRequestHandler implements EventListenerInterface
     /**
      * Prepares the response object with content type and cors headers.
      *
-     * @param Event $event The event object either beforeDispatch or afterDispatch
+     * @param EventInterface $event The event object either beforeDispatch or afterDispatch
      *
      * @return Response
      */
-    private function buildResponse(Event $event)
+    private function buildResponse(EventInterface $event)
     {
-        $request = $event->getData()['request'];
-        $response = $event->getData()['response'];
+        $request = $event->getData('request');
+        $response = $event->getData('response');
+        if (!$response instanceof Response) {
+            return new Response();
+        }
         if ('xml' === Configure::read('ApiRequest.responseType')) {
-            $response->type('xml');
+            $response = $response->withType('xml');
         } else {
-            $response->type('json');
+            $response = $response->withType('json');
         }
         /**
          * @var $response Response
@@ -122,6 +129,9 @@ class ApiRequestHandler implements EventListenerInterface
             ->allowCredentials()
             ->maxAge(Configure::read('ApiRequest.cors.maxAge'))
             ->build();
+        if (method_exists($event, 'setData')) {
+            $event->setData('response', $response);
+        }
         return $response;
     }
 }

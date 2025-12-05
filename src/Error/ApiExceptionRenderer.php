@@ -4,9 +4,9 @@ namespace RestApi\Error;
 
 use Cake\Core\Configure;
 use Cake\Error\ExceptionRenderer;
-use Cake\Network\Response;
 use Cake\Utility\Xml;
-use Exception;
+use Cake\Http\Response;
+use Throwable;
 use RestApi\Controller\ApiErrorController;
 use RestApi\Routing\Exception\InvalidTokenException;
 use RestApi\Routing\Exception\InvalidTokenFormatException;
@@ -69,20 +69,21 @@ class ApiExceptionRenderer extends ExceptionRenderer
     /**
      * Prepare response.
      *
-     * @param Exception $exception Exception
+     * @param Throwable $exception Exception
      * @param array $options Array of options
      *
      * @return \Cake\Http\Response
      */
-    private function __prepareResponse($exception, $options = [])
+    private function __prepareResponse($exception, $options = []): Response
     {
-        $response = $this->_getController()->response;
+        $controller = $this->_getController();
+        $response = $controller->getResponse();
         $code = $this->_code($exception);
-        $response->getStatusCode($this->_code($exception));
+        $response = $response->withStatus($code);
 
         Configure::write('apiExceptionMessage', $exception->getMessage());
 
-        $responseFormat = $this->_getController()->responseFormat;
+        $responseFormat = $controller->responseFormat;
         $responseData = [
             $responseFormat['statusKey'] => !empty($options['responseStatus']) ? $options['responseStatus'] : $responseFormat['statusNokText'],
             $responseFormat['resultKey'] => [
@@ -95,17 +96,15 @@ class ApiExceptionRenderer extends ExceptionRenderer
         }
 
         if ('xml' === Configure::read('ApiRequest.responseType')) {
-            $body = $response->getBody();
-            $body->write(Xml::fromArray([Configure::read('ApiRequest.xmlResponseRootNode') => $responseData], 'tags')->asXML());
-            $response->withBody($body);
+            $response = $response->withType('xml')
+                ->withStringBody(Xml::fromArray([Configure::read('ApiRequest.xmlResponseRootNode') => $responseData], 'tags')->asXML());
         } else {
-            $body = $response->getBody();
-            $body->write(json_encode($responseData));
-            $response->type('json');
-            $response->withBody($body);
+            $response = $response->withType('json')
+                ->withStringBody(json_encode($responseData));
         }
 
-        $this->controller->response = $response;
+        $controller->setResponse($response);
+        $this->controller = $controller;
 
         return $response;
     }

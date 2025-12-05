@@ -4,9 +4,7 @@ namespace RestApi\Controller\Component;
 
 use Cake\Controller\Component;
 use Cake\Core\Configure;
-use Cake\Event\Event;
-use Cake\Network\Exception\UnauthorizedException;
-use Cake\Network\Response;
+use Cake\Event\EventInterface;
 use Firebase\JWT\JWT;
 use RestApi\Routing\Exception\InvalidTokenException;
 use RestApi\Routing\Exception\InvalidTokenFormatException;
@@ -24,10 +22,10 @@ class AccessControlComponent extends Component
      *
      * Handles request authentication using JWT.
      *
-     * @param Event $event The startup event
+     * @param EventInterface $event The startup event
      * @return bool
      */
-    public function beforeFilter(Event $event)
+    public function beforeFilter(EventInterface $event)
     {
         if (Configure::read('ApiRequest.jwtAuth.enabled')) {
             return $this->_performTokenValidation($event);
@@ -38,25 +36,26 @@ class AccessControlComponent extends Component
     /**
      * Performs token validation.
      *
-     * @param Event $event The startup event
+     * @param EventInterface $event The startup event
      * @return bool
      */
-    protected function _performTokenValidation(Event $event)
+    protected function _performTokenValidation(EventInterface $event)
     {
-        $request = $event->getSubject()->request;
+        $controller = $event->getSubject();
+        $request = $controller->getRequest();
         if (!empty($request->getParam('allowWithoutToken')) && $request->getParam('allowWithoutToken')) {
             return true;
         }
         $token = '';
-        $header = $request->getHeader('Authorization');
-        if (!empty($header[0])) {
-            $parts = explode(' ', $header[0]);
+        $header = $request->getHeaderLine('Authorization');
+        if (!empty($header)) {
+            $parts = explode(' ', $header);
             if (count($parts) < 2 || empty($parts[0]) || !preg_match('/^Bearer$/i', $parts[0])) {
                 throw new InvalidTokenFormatException();
             }
             $token = $parts[1];
-        } elseif (!empty($this->request->getQuery('token'))) {
-            $token = $this->request->getQuery('token');
+        } elseif (!empty($request->getQuery('token'))) {
+            $token = $request->getQuery('token');
         } elseif (!empty($request->getParam('token'))) {
             $token = $request->getParam('token');
         } else {
@@ -70,7 +69,6 @@ class AccessControlComponent extends Component
         if (empty($payload)) {
             throw new InvalidTokenException();
         }
-        $controller = $this->_registry->getController();
         $controller->jwtPayload = $payload;
         $controller->jwtToken = $token;
         Configure::write('accessToken', $token);

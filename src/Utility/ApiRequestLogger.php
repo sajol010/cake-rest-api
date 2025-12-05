@@ -3,8 +3,8 @@
 namespace RestApi\Utility;
 
 use Cake\Core\Configure;
-use Cake\Network\Request;
-use Cake\Network\Response;
+use Cake\Http\ServerRequest;
+use Cake\Http\Response;
 use Cake\ORM\TableRegistry;
 
 /**
@@ -15,14 +15,14 @@ class ApiRequestLogger
     /**
      * Logs the request and response data into database.
      *
-     * @param Request $request The \Cake\Network\Request object
-     * @param Response $response The \Cake\Network\Response object
+     * @param ServerRequest $request The \Cake\Http\ServerRequest object
+     * @param Response $response The \Cake\Http\Response object
      */
-    public static function log(Request $request, Response $response)
+    public static function log(ServerRequest $request, Response $response)
     {
         Configure::write('requestLogged', true);
         try {
-            $apiRequests = TableRegistry::get('RestApi.ApiRequests');
+            $apiRequests = TableRegistry::getTableLocator()->get('RestApi.ApiRequests');
             $entityData = [
                 'http_method' => $request->getMethod(),
                 'endpoint' => $request->getRequestTarget(),
@@ -31,7 +31,7 @@ class ApiRequestLogger
                 'request_data' => json_encode($request->getData()),
                 'response_code' => $response->getStatusCode(),
                 'response_type' => Configure::read('ApiRequest.responseType'),
-                'response_data' => $response->getBody(),
+                'response_data' => (string)$response->getBody(),
                 'exception' => Configure::read('apiExceptionMessage'),
             ];
             $entity = $apiRequests->newEntity($entityData);

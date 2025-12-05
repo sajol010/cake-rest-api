@@ -21,14 +21,14 @@ class ApiErrorView extends View
      *
      * @return void
      */
-    public function initialize()
+    public function initialize(): void
     {
         parent::initialize();
         if ('xml' === Configure::read('ApiRequest.responseType')) {
-            $this->response->type('xml');
+            $this->setResponse($this->getResponse()->withType('xml'));
             $this->_responseLayout = 'xml_error';
         } else {
-            $this->response->type('json');
+            $this->setResponse($this->getResponse()->withType('json'));
         }
     }
     /**
@@ -44,8 +44,8 @@ class ApiErrorView extends View
         if ($this->hasRendered) {
             return null;
         }
-        $this->layout = "RestApi.{$this->_responseLayout}";
-        $this->Blocks->set('content', $this->renderLayout('', $this->layout));
+        $this->setLayout("RestApi.{$this->_responseLayout}");
+        $this->Blocks->set('content', $this->renderLayout('', $this->getLayout()));
         $this->hasRendered = true;
         return $this->Blocks->get('content');
     }

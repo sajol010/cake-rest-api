@@ -7,6 +7,10 @@ use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Event\EventManager;
 use Cake\Utility\Inflector;
 use RestApi\Event\ApiRequestHandler;
+use Throwable;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
 class RestApiMiddleware extends ErrorHandlerMiddleware
 {
@@ -14,11 +18,10 @@ class RestApiMiddleware extends ErrorHandlerMiddleware
      * Override ErrorHandlerMiddleware and add custom exception renderer
      *
      * @param \Psr\Http\Message\ServerRequestInterface $request The request.
-     * @param \Psr\Http\Message\ResponseInterface $response The response.
-     * @param callable $next Callback to invoke the next middleware.
+     * @param \Psr\Http\Server\RequestHandlerInterface $handler Callback to invoke the next middleware.
      * @return \Psr\Http\Message\ResponseInterface A response
      */
-    public function __invoke($request, $response, $next)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         try {
             $params = (array)$request->getAttribute('params', []);
@@ -30,7 +33,7 @@ class RestApiMiddleware extends ErrorHandlerMiddleware
                     strpos($controllerName, '.') !== false ||
                     $firstChar === strtolower($firstChar)
                 ) {
-                    return $next($request, $response);
+                    return $handler->handle($request);
                 }
                 $type = 'Controller';
                 if (isset($params['prefix']) && $params['prefix']) {
@@ -49,9 +52,9 @@ class RestApiMiddleware extends ErrorHandlerMiddleware
                 }
                 unset($controller);
             }
-            return $next($request, $response);
-        } catch (\Exception $e) {
-            return $this->handleException($e, $request, $response);
+            return $handler->handle($request);
+        } catch (Throwable $e) {
+            return $this->handleException($e, $request);
         }
     }
 }
