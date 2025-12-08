@@ -11,6 +11,13 @@ use Cake\View\View;
 class ApiErrorView extends View
 {
     /**
+     * Tracks whether the view has already been rendered.
+     *
+     * @var bool
+     */
+    protected bool $_hasRendered = false;
+
+    /**
      * Layout
      *
      * @var string
@@ -39,14 +46,14 @@ class ApiErrorView extends View
      * @return string|null Rendered content or null if content already rendered and returned earlier.
      * @throws Exception If there is an error in the view.
      */
-    public function render($view = null, $layout = null)
+    public function render(?string $view = null, string|false|null $layout = null): string
     {
-        if ($this->hasRendered) {
-            return null;
+        if ($this->_hasRendered) {
+            return (string)$this->Blocks->get('content');
         }
         $this->setLayout("RestApi.{$this->_responseLayout}");
         $this->Blocks->set('content', $this->renderLayout('', $this->getLayout()));
-        $this->hasRendered = true;
-        return $this->Blocks->get('content');
+        $this->_hasRendered = true;
+        return (string)$this->Blocks->get('content');
     }
 }
