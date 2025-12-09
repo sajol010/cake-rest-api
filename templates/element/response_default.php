@@ -1,6 +1,11 @@
 <?php
-if (empty($response[$responseFormat['resultKey']])) {
-    $response[$responseFormat['resultKey']] = [
-        $responseFormat['messageKey'] => $responseFormat['defaultMessageText']
+$statusKey = $responseFormat['statusKey'] ?? 'status';
+$resultKey = $responseFormat['resultKey'] ?? 'result';
+$messageKey = $responseFormat['messageKey'] ?? 'message';
+$defaultMessage = $responseFormat['defaultMessageText'] ?? 'Empty response!';
+
+if (empty($response[$resultKey])) {
+    $response[$resultKey] = [
+        $messageKey => $defaultMessage
     ];
 }
