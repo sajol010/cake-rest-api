@@ -23,14 +23,15 @@ class AccessControlComponent extends Component
      * Handles request authentication using JWT.
      *
      * @param EventInterface $event The startup event
-     * @return bool
+     * @return void
      */
-    public function beforeFilter(EventInterface $event)
+    public function beforeFilter(EventInterface $event): void
     {
+        $result = true;
         if (Configure::read('ApiRequest.jwtAuth.enabled')) {
-            return $this->_performTokenValidation($event);
+            $result = $this->_performTokenValidation($event);
         }
-        return true;
+        $event->setResult($result);
     }
 
     /**
